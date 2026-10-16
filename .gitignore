@@ -1,0 +1,30 @@
+# Build artifacts
+*.o
+*.x
+*.out
+bin/
+build/
+
+# Generated data and figures
+data/
+figures/
+*.dat
+*.pdf
+*.png
+*.svg
+!docs/assets/
+!docs/assets/**
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Editor / OS
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
