@@ -12,6 +12,8 @@ figures/
 *.pdf
 *.png
 *.svg
+!docs/assets/
+!docs/assets/**
 
 # Python
 __pycache__/
