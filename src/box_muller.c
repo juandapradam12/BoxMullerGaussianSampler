@@ -4,11 +4,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static int has_spare = 0;
+static double spare = 0.0;
+
+void box_muller_reset(void)
+{
+    has_spare = 0;
+    spare = 0.0;
+}
+
 double box_muller_sample(double mu, double sigma)
 {
-    static int has_spare = 0;
-    static double spare = 0.0;
-
     if (has_spare) {
         has_spare = 0;
         return mu + sigma * spare;

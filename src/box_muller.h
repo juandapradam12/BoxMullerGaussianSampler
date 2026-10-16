@@ -9,6 +9,9 @@
  */
 double box_muller_sample(double mu, double sigma);
 
+/** Clear the cached twin sample (useful before seeded benchmark/test runs). */
+void box_muller_reset(void);
+
 /**
  * Fill `out` with `n` i.i.d. samples from N(mu, sigma^2).
  * Returns 0 on success, -1 if `out` is NULL or `n` is zero.

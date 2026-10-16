@@ -1,6 +1,6 @@
 # Gaussian Sampling with the Box–Muller Transform
 
-Portfolio case study: a small, reproducible pipeline that draws i.i.d. Gaussian samples in C and validates them against the theoretical density in Python.
+Portfolio case study: a small, reproducible pipeline that draws i.i.d. Gaussian samples in C and validates them against the theoretical distribution in Python.
 
 $$
 X \sim \mathcal{N}(\mu, \sigma^2),
@@ -12,24 +12,29 @@ $$
 ## What this project demonstrates
 
 - **Numerical sampling** via the polar Box–Muller method (rejection sampling on the unit disk, twin-sample caching).
-- **Separation of concerns**: portable C sampler + thin Python visualization layer.
+- **Separation of concerns**: portable C sampler + thin Python analysis / visualization layer.
 - **Reproducible runs** through CLI flags, Makefile parameters, and an explicit RNG seed.
-- **Empirical validation**: density-normalized histogram overlaid on the closed-form PDF, plus sample mean / std checks.
+- **Quantitative validation**: moment errors, Kolmogorov–Smirnov distance, histogram-vs-PDF and QQ plots.
+- **Automated checks**: C unit smoke test, Python unit + pipeline tests, GitHub Actions CI.
 
 ## Repository layout
 
 ```text
 ├── src/
-│   ├── box_muller.h      # Public sampling API
-│   ├── box_muller.c      # Box–Muller implementation
-│   └── main.c            # CLI entry point
+│   ├── box_muller.h / .c   # Public sampling API
+│   └── main.c              # CLI entry point
 ├── scripts/
-│   └── visualize.py      # Histogram vs. PDF
+│   ├── gaussian_stats.py   # PDF/CDF/PPF + diagnostics
+│   └── visualize.py        # Histogram + QQ figures
+├── tests/
+│   ├── test_box_muller.c
+│   ├── test_gaussian_stats.py
+│   └── test_pipeline.py
 ├── docs/
-│   └── methodology.md    # Math background and design notes
+│   └── methodology.md
+├── .github/workflows/ci.yml
 ├── Makefile
-├── requirements.txt
-└── README.md
+└── requirements.txt
 ```
 
 Generated outputs (`bin/`, `data/`, `figures/`) are ignored by git.
@@ -38,7 +43,7 @@ Generated outputs (`bin/`, `data/`, `figures/`) are ignored by git.
 
 - GCC (C11) with `libm`
 - Python 3.10+
-- `numpy`, `matplotlib` (see `requirements.txt`)
+- `numpy`, `scipy`, `matplotlib` (see `requirements.txt`)
 
 ```bash
 python3 -m venv .venv
@@ -54,12 +59,21 @@ Default run ($N=5000$, $\mu=2.5$, $\sigma=3.5$, seed $42$):
 make
 ```
 
-This builds `bin/gaussian_sampler`, writes `data/sample.dat`, and saves `figures/histogram_vs_pdf.png`.
+This builds `bin/gaussian_sampler`, writes `data/sample.dat`, and saves:
+
+- `figures/histogram_vs_pdf.png`
+- `figures/qq_plot.png`
 
 ### Custom parameters
 
 ```bash
 make N=10000 MU=0 SIGMA=1 SEED=7 BINS=60
+```
+
+### Tests
+
+```bash
+make test
 ```
 
 ### Direct CLI usage
@@ -75,25 +89,28 @@ python3 scripts/visualize.py --input data/sample.dat --mu 2.5 --sigma 3.5 --bins
 | Concern | Choice |
 | --- | --- |
 | Sampling | Polar Box–Muller with cached spare normal |
-| Interface | `box_muller_sample` / `box_muller_fill` / `write_samples` |
+| Uniforms | `rand()` for clarity; swap-ready API for a stronger PRNG |
+| Interface | `box_muller_sample` / `box_muller_fill` / `write_samples` / `box_muller_reset` |
 | Configuration | Explicit CLI flags (no hardcoded experiment knobs in library code) |
-| Validation | Visual PDF overlay + printed moment summary |
-| Artifacts | Build products and plots stay local; sources stay clean |
+| Validation | Moments, KS vs $1.36/\sqrt{N}$, histogram + QQ |
+| CI | `make test` on every push / PR |
 
-See [docs/methodology.md](docs/methodology.md) for the transform derivation and pipeline diagram.
+See [docs/methodology.md](docs/methodology.md) for the transform derivation and validation formulas.
 
 ## Example output
 
 For $\mu = 2.5$, $\sigma = 3.5$, $N = 5000$, seed $42$:
 
 ```text
-Wrote 5000 samples from N(2.5, 3.5^2) to data/sample.dat (seed=42)
-n=5000  mean=2.4676 (target 2.5000)  std=3.4701 (target 3.5000)
+n=5000
+mean≈2.47  target=2.50
+std ≈3.47  target=3.50
+KS D below the 95% critical value
 ```
 
 ![Empirical histogram vs theoretical Gaussian PDF](docs/assets/example_histogram.png)
 
-The histogram tracks $f_X$ closely; residual mismatch is ordinary Monte Carlo noise.
+![QQ plot against the target Gaussian](docs/assets/example_qq.png)
 
 ## License
 
